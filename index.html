@@ -93,6 +93,10 @@ sup{font-size:.58em; vertical-align:super; line-height:0}
 .feedback{min-height:30px; margin-top:10px; font-size:20px; font-weight:800; line-height:1.3}
 .feedback.good{color:var(--go)}
 .feedback.bad{color:var(--oops)}
+.feedback.good{font-size:23px}
+.pop{animation:pop .4s ease-out}
+@keyframes pop{0%{transform:scale(.6); opacity:0}60%{transform:scale(1.15); opacity:1}100%{transform:scale(1)}}
+.steps-tip{font-size:16px !important; font-weight:700 !important; color:var(--go); margin-top:4px !important}
 .steps{margin-top:10px; text-align:left; background:var(--paper); border-radius:12px; padding:10px 14px}
 .steps-title{font-weight:800; font-size:16px; margin:0 0 2px}
 .steps p{margin:0; display:flex; justify-content:space-between; align-items:baseline; gap:4px 12px; flex-wrap:wrap; font-size:21px; font-weight:700; line-height:1.55}
@@ -170,7 +174,7 @@ sup{font-size:.58em; vertical-align:super; line-height:0}
 
 </main>
 <script>
-const CONFIG = {"levels": [{"gen": "add", "name": "Addition", "blurb": "Add two numbers", "seconds": 15}, {"gen": "sub", "name": "Subtraction", "blurb": "Take one number away from another", "seconds": 15}, {"gen": "mul", "name": "Multiplication", "blurb": "Times tables up to 12", "seconds": 15}, {"gen": "div", "name": "Division", "blurb": "Split into equal groups", "seconds": 20}, {"gen": "mix", "name": "Mixed four", "blurb": "Add, subtract, multiply and divide", "seconds": 20}, {"gen": "mdas", "name": "MDAS", "blurb": "Multiply and divide before you add and subtract", "seconds": 35}, {"gen": "pemdas", "name": "PEMDAS", "blurb": "Parentheses and exponents come first", "seconds": 45}, {"gen": "champ", "name": "Champion", "blurb": "Long PEMDAS problems", "seconds": 60}], "questions": 10, "attackSeconds": 60, "bonusSeconds": 2, "attackStep": 4, "stars": [0.6, 0.8, 1.0], "maxValue": 999};
+const CONFIG = {"levels": [{"gen": "add", "name": "Addition", "blurb": "Add two numbers", "seconds": 15}, {"gen": "sub", "name": "Subtraction", "blurb": "Take one number away from another", "seconds": 15}, {"gen": "mul", "name": "Multiplication", "blurb": "Times tables up to 12", "seconds": 15}, {"gen": "div", "name": "Division", "blurb": "Split into equal groups", "seconds": 20}, {"gen": "mix", "name": "Mixed four", "blurb": "Add, subtract, multiply and divide", "seconds": 20}, {"gen": "mdas", "name": "MDAS", "blurb": "Multiply and divide before you add and subtract", "seconds": 40}, {"gen": "pemdas", "name": "PEMDAS", "blurb": "Solve the parentheses first", "seconds": 50}, {"gen": "champ", "name": "Champion", "blurb": "Two-step PEMDAS problems", "seconds": 60}], "questions": 10, "attackSeconds": 60, "bonusSeconds": 2, "attackStep": 4, "stars": [0.6, 0.8, 1.0], "maxValue": 999, "praise": ["Great job!", "Excellent!", "Awesome!", "You got it!", "Super!", "Way to go!", "Brilliant!", "Nice work!", "Fantastic!", "Math star!"], "praiseSecond": ["Nice, you got it!", "Good thinking!", "You figured it out!", "Way to keep trying!"], "praiseStreak": ["You're on fire!", "Unstoppable!", "Keep it up!", "Wow, what a streak!"]};
 const LEVELS = CONFIG.levels;
 const STORE_KEY = "mathclimb:v1";
 
@@ -241,48 +245,48 @@ const GEN = {
   div(t) { const [a, b] = divPair(lerp(5, 12, t), lerp(5, 12, t)); return [a, "/", b]; },
   mix(t) { return GEN[pick(["add", "sub", "mul", "div"])](Math.min(1, t + 0.3)); },
   mdas(t) {
-    const s = lerp(6, 10, t), n = () => rand(1, s), m = () => rand(2, s);
+    const s = lerp(4, 7, t), n = () => rand(1, s), m = () => rand(2, s);
     const two = [
       () => [n(), "+", m(), "*", m()],
       () => [m(), "*", m(), "-", n()],
-      () => { const [a, b] = divPair(6, s); return [a, "/", b, "+", n()]; },
-      () => [rand(20, 60), "-", m(), "*", m()],
-      () => { const [a, b] = divPair(6, s); return [n(), "+", a, "/", b]; },
+      () => { const [a, b] = divPair(5, 5); return [a, "/", b, "+", n()]; },
+      () => [rand(10, 30), "-", m(), "*", m()],
+      () => { const [a, b] = divPair(5, 5); return [n(), "+", a, "/", b]; },
     ];
     const three = [
       () => [n(), "+", m(), "*", m(), "-", n()],
       () => [m(), "*", m(), "+", m(), "*", m()],
-      () => { const [a, b] = divPair(6, s); return [a, "/", b, "*", m()]; },
-      () => { const [a, b] = divPair(6, s); return [m(), "*", m(), "-", a, "/", b]; },
-      () => [rand(20, 60), "-", m(), "*", m(), "+", n()],
+      () => [rand(10, 30), "-", m(), "*", m(), "+", n()],
     ];
-    return pick(t < 0.4 || Math.random() < 0.3 ? two : three)();
+    return pick(t < 0.5 || Math.random() < 0.5 ? two : three)();
   },
+  // PEMDAS for younger students: small numbers, parentheses first, a few easy squares.
   pemdas(t) {
-    const s = lerp(6, 10, t), n = () => rand(1, s), m = () => rand(2, s), e = () => rand(2, t < 0.5 ? 6 : 9);
-    return pick([
+    const n = () => rand(1, 5), m = () => rand(2, 4);
+    const easy = [
       () => ["(", n(), "+", n(), ")", "*", m()],
-      () => { const a = rand(5, 15); return [m(), "*", "(", a, "-", rand(1, a - 1), ")"]; },
-      () => ["(", n(), "+", n(), ")", "/", m()],
-      () => [e(), "^", 2, "+", n()],
-      () => [rand(30, 90), "-", e(), "^", 2],
-      () => ["(", rand(5, 12), "-", n(), ")", "^", 2],
-      () => ["(", n(), "+", n(), ")", "*", m(), "-", n()],
-      () => [rand(2, 3), "^", 3, "-", n()],
-      () => [e(), "^", 2, "-", m(), "*", m()],
-    ])();
+      () => [m(), "*", "(", n(), "+", n(), ")"],
+      () => { const a = rand(4, 9); return ["(", a, "-", rand(1, a - 1), ")", "*", m()]; },
+      () => { const c = m(), q = rand(1, 4), a = rand(1, c * q - 1); return ["(", a, "+", c * q - a, ")", "/", c]; },
+      () => [rand(10, 20), "-", "(", n(), "+", n(), ")"],
+      () => [n(), "+", "(", m(), "*", m(), ")"],
+    ];
+    const squares = [
+      () => [rand(2, 5), "^", 2, "+", n()],
+      () => [rand(2, 5), "^", 2, "-", n()],
+      () => ["(", rand(1, 3), "+", rand(1, 2), ")", "^", 2],
+    ];
+    return pick(t < 0.4 || Math.random() < 0.65 ? easy : squares)();
   },
   champ(t) {
-    const n = () => rand(1, 10), m = () => rand(2, 10), e = () => rand(2, 9);
+    const n = () => rand(1, 5), m = () => rand(2, 4);
     return pick([
-      () => [m(), "*", "(", n(), "+", n(), ")", "-", rand(2, 5), "^", 2],
-      () => ["(", n(), "+", m(), "*", m(), ")", "/", m()],
-      () => [e(), "^", 2, "/", "(", rand(4, 10), "-", n(), ")"],
-      () => ["(", n(), "+", n(), ")", "^", 2, "-", m(), "*", m()],
-      () => [rand(20, 60), "-", "(", m(), "*", "(", rand(5, 12), "-", n(), ")", ")"],
-      () => ["(", rand(2, 5), "^", 2, "+", n(), ")", "*", m()],
-      () => [m(), "^", 2, "+", m(), "^", 2, "-", n()],
-      () => ["(", rand(30, 80), "-", m(), "*", m(), ")", "/", m()],
+      () => ["(", n(), "+", n(), ")", "*", m(), "-", n()],
+      () => [n(), "+", m(), "*", "(", rand(3, 6), "-", rand(1, 2), ")"],
+      () => ["(", rand(6, 10), "-", n(), ")", "*", m(), "+", n()],
+      () => [rand(2, 5), "^", 2, "+", "(", n(), "+", n(), ")"],
+      () => [rand(3, 5), "^", 2, "-", m(), "*", m()],
+      () => { const c = m(), q = rand(1, 5), a = rand(1, c * q - 1); return ["(", a, "+", c * q - a, ")", "/", c, "+", n()]; },
     ])();
   },
 };
@@ -387,7 +391,7 @@ function drawHome() {
 
 /* ---------------- Game state + timer ---------------- */
 const S = {mode: null, level: 0, qIndex: 0, correct: 0, score: 0, q: null, tries: 0, input: "",
-           locked: false, seen: new Set(), deadline: 0, limit: 1, timerId: null, lastSec: null, pausedLeft: null};
+           locked: false, streak: 0, seen: new Set(), deadline: 0, limit: 1, timerId: null, lastSec: null, pausedLeft: null};
 
 function stopTimer() { clearInterval(S.timerId); S.timerId = null; }
 function pauseTimer() { S.pausedLeft = Math.max(0, S.deadline - Date.now()); stopTimer(); }
@@ -413,13 +417,13 @@ function tick() {
 
 /* ---------------- Playing ---------------- */
 function startLevel(i) {
-  Object.assign(S, {mode: "level", level: i, qIndex: 0, correct: 0, score: 0});
+  Object.assign(S, {mode: "level", level: i, qIndex: 0, correct: 0, score: 0, streak: 0});
   S.seen.clear();
   show("play");
   nextQuestion();
 }
 function startAttack() {
-  Object.assign(S, {mode: "attack", qIndex: 0, correct: 0, score: 0, pausedLeft: CONFIG.attackSeconds * 1000});
+  Object.assign(S, {mode: "attack", qIndex: 0, correct: 0, score: 0, streak: 0, pausedLeft: CONFIG.attackSeconds * 1000});
   S.limit = CONFIG.attackSeconds * 1000;
   S.seen.clear();
   show("play");
@@ -478,22 +482,27 @@ function onRight() {
   S.locked = true;
   const left = Math.max(0, S.deadline - Date.now());
   S.correct++;
+  S.streak++;
   SFX.right();
   drawAnswer("right");
   const fb = $("feedback");
   fb.className = "feedback good";
+  void fb.offsetWidth; fb.classList.add("pop");
+  const cheer = S.streak >= 3 && S.streak % 3 === 0
+    ? S.streak + " in a row! " + pick(CONFIG.praiseStreak)
+    : pick(S.tries === 0 ? CONFIG.praise : CONFIG.praiseSecond);
   if (S.mode === "level") {
     stopTimer();
     const pts = S.tries === 0 ? 10 + Math.ceil((left / S.limit) * 10) : 5;
     S.score += pts;
-    fb.textContent = "Correct! +" + pts + " points";
+    fb.textContent = cheer + " +" + pts + " points";
   } else {
     S.deadline += CONFIG.bonusSeconds * 1000;
     pauseTimer();
-    fb.textContent = "Correct! +" + CONFIG.bonusSeconds + " seconds";
+    fb.textContent = cheer + " +" + CONFIG.bonusSeconds + " seconds";
   }
   drawScore();
-  setTimeout(() => { if (S.mode === "level") S.qIndex++; nextQuestion(); }, 750);
+  setTimeout(() => { if (S.mode === "level") S.qIndex++; nextQuestion(); }, 1100);
 }
 function onWrong() {
   if (S.mode === "level" && S.tries === 0) {
@@ -504,7 +513,7 @@ function onWrong() {
     const a = $("answer");
     a.classList.remove("shake"); void a.offsetWidth; a.classList.add("shake");
     $("feedback").className = "feedback bad";
-    $("feedback").textContent = "Not quite. Try once more.";
+    $("feedback").textContent = pick(["Almost! Try once more.", "So close! Have another go.", "Not quite. You can do it!"]);
     return;
   }
   reveal(false);
@@ -516,11 +525,12 @@ function timeUp() {
 }
 function reveal(timedOut) {
   S.locked = true;
+  S.streak = 0;
   if (S.mode === "level") stopTimer(); else pauseTimer();
   timedOut ? SFX.timeup() : SFX.wrong();
   const fb = $("feedback");
   fb.className = "feedback bad";
-  fb.textContent = (timedOut ? "Time's up! " : "") + "The answer is " + S.q.answer + ".";
+  fb.textContent = (timedOut ? "Time's up! Good try. " : "Good try! ") + "The answer is " + S.q.answer + ".";
   if (!timedOut) drawAnswer("wrong");
   const steps = S.q.steps;
   let html = '<p class="steps-title">How to solve it</p>';
@@ -532,6 +542,7 @@ function reveal(timedOut) {
       html += '<p><span>= ' + render(steps[i].tokens) + '</span><span class="note">' + steps[i].note + "</span></p>";
     }
   }
+  html += '<p class="steps-tip">Now you know how. You\'ll get the next one!</p>';
   $("steps").innerHTML = html;
   $("steps").hidden = false;
   $("pad").hidden = true;
@@ -556,10 +567,11 @@ function finishLevel() {
   if (newBest) store.best[i] = S.score;
   saveStore();
   if (stars) SFX.win(); else SFX.timeup();
-  $("resTitle").textContent = stars ? "Level complete!" : "Keep practising!";
+  $("resTitle").textContent = ["Good practice!", "Well done!", "Great job!", "Amazing!"][stars];
   $("resStars").innerHTML = starsHTML(stars);
   $("resStars").setAttribute("aria-label", stars + " of 3 stars");
-  $("resLine").textContent = "You got " + S.correct + " of " + CONFIG.questions + " right and scored " + S.score + " points.";
+  $("resLine").textContent = "You got " + S.correct + " of " + CONFIG.questions + " right and scored " + S.score + " points." +
+    (stars === 3 ? " A perfect score!" : stars ? "" : " Every try makes you better. Play again?");
   $("resBest").textContent = newBest ? "That's your best score on this level." : "Your best on this level: " + store.best[i] + " points.";
   $("nextLevelBtn").hidden = i >= LEVELS.length - 1;
   show("results");
@@ -571,7 +583,7 @@ function endAttack() {
   const newBest = S.correct > best;
   if (newBest) { store.best.attack = S.correct; saveStore(); }
   SFX.win();
-  $("resTitle").textContent = "Time's up!";
+  $("resTitle").textContent = S.correct >= 10 ? "Amazing!" : S.correct >= 5 ? "Great job!" : "Good practice!";
   $("resStars").innerHTML = "";
   $("resLine").textContent = "You answered " + S.correct + (S.correct === 1 ? " question" : " questions") + " right.";
   $("resBest").textContent = newBest ? "That's a new best!" : "Your best: " + best + " right.";
